@@ -257,6 +257,10 @@ function! asyncomplete#cancel_popup() abort
   return pumvisible() ? "\<C-e>" : ''
 endfunction
 
+function! s:get_min_chars(source_name) abort
+    return get(s:sources[a:source_name], 'min_chars', g:asyncomplete_min_chars)
+endfunction
+
 function! s:on_change() abort
     if s:should_skip() | return | endif
 
@@ -286,11 +290,12 @@ function! s:on_change() abort
     let l:refresh_pattern = '\(\k\+$\)'
     let [l:_, l:startidx, l:endidx] = asyncomplete#utils#matchstrpos(l:ctx['typed'], l:refresh_pattern)
     let l:startcol = l:startidx + 1
+    let l:typed_len = l:endidx - l:startidx
 
     if l:startidx > -1
         if s:should_skip_popup() | return | endif
         for l:source_name in b:asyncomplete_active_sources
-            if !has_key(l:sources_to_notify, l:source_name)
+            if l:typed_len >= s:get_min_chars(l:source_name) && !has_key(l:sources_to_notify, l:source_name)
                 if has_key(s:matches, l:source_name) && s:matches[l:source_name]['ctx']['lnum'] ==# l:ctx['lnum'] && s:matches[l:source_name]['startcol'] ==# l:startcol
                     continue
                 endif
